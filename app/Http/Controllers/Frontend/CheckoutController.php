@@ -10,9 +10,33 @@ use Illuminate\Http\Request;
 
 class CheckoutController extends Controller
 {
+    private function getCart()
+    {
+        if (auth()->check()) {
+            $cart = auth()->user()->cart;
+            if (is_string($cart)) {
+                $cart = json_decode($cart, true);
+            }
+            return is_array($cart) ? $cart : [];
+        }
+
+        return session()->get('cart', []);
+    }
+
+    private function clearCart()
+    {
+        if (auth()->check()) {
+            $user = auth()->user();
+            $user->cart = [];
+            $user->save();
+        }
+
+        session()->forget('cart');
+    }
+
     public function index()
     {
-        $cart = session()->get('cart', []);
+        $cart = $this->getCart();
 
         if (empty($cart)) {
             return redirect()->route('shop')->with('error', 'Your cart is empty.');
@@ -41,7 +65,7 @@ class CheckoutController extends Controller
             'payment_method' => 'required|in:cod,bank_transfer',
         ]);
 
-        $cart = session()->get('cart', []);
+        $cart = $this->getCart();
 
         if (empty($cart)) {
             return redirect()->route('shop')->with('error', 'Your cart is empty.');
@@ -92,7 +116,7 @@ class CheckoutController extends Controller
             ]);
         }
 
-        session()->forget('cart');
+        $this->clearCart();
 
         return redirect()->route('order.confirmation', $order->id)->with('success', 'Order placed successfully!');
     }

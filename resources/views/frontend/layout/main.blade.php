@@ -708,7 +708,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         // Cart functionality
-        function addToCart(productId, quantity = 1) {
+        function addToCart(productId, quantity = 1, callback = null) {
             $.ajax({
                 url: '{{ route("cart.add") }}',
                 type: 'POST',
@@ -721,8 +721,17 @@
                     if(response.success) {
                         alert(response.message);
                         updateCartCount(response.cart_count);
+                        if (typeof callback === 'function') {
+                            callback(response);
+                        }
                     }
                 }
+            });
+        }
+
+        function buyNow(productId, quantity = 1) {
+            addToCart(productId, quantity, function() {
+                window.location = '{{ route("checkout") }}';
             });
         }
 

@@ -135,11 +135,27 @@
         display: flex;
         gap: 15px;
         margin-bottom: 30px;
+        flex-wrap: wrap;
     }
 
     .product-actions .btn {
-        flex: 1;
-        text-align: center;
+        min-width: 150px;
+        padding: 12px 18px;
+        border-radius: 5px;
+        color: #000;
+        background: var(--secondary);
+        border: 1px solid transparent;
+        text-transform: uppercase;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+
+    .product-actions .btn:hover {
+        opacity: 0.95;
     }
 
     .product-tabs {
@@ -254,18 +270,25 @@
             <!-- Image Gallery -->
             <div class="product-gallery">
                 @php
-                    $mainImage = $product->first_image ?? 'https://via.placeholder.com/600x500';
-                    $galleryImages = collect([$product->first_image])->merge($product->images ?? collect())->filter()->unique()->values();
+                    use Illuminate\Support\Str;
+                    $galleryImages = collect($product->images ?? [])->filter()->unique()->values();
+                    $imageHelper = function ($image) {
+                        if (!$image) {
+                            return 'https://via.placeholder.com/600x500';
+                        }
+                        return Str::startsWith($image, ['http://', 'https://']) ? $image : asset('uploads/' . $image);
+                    };
+
+                    $mainImage = $galleryImages->first() ? $imageHelper($galleryImages->first()) : 'https://via.placeholder.com/600x500';
                 @endphp
 
                 <img src="{{ $mainImage }}" alt="Product Image" class="main-image" id="mainImage">
                 <div class="thumbnail-grid">
-                    @foreach($galleryImages->take(4) as $index => $img)
-                        <img src="{{ $img }}" alt="Thumbnail {{ $index + 1 }}" class="thumbnail {{ $index === 0 ? 'active' : '' }}" onclick="changeImage(this, '{{ $img }}')">
-                    @endforeach
-                    @if($galleryImages->isEmpty())
+                    @forelse($galleryImages->take(4) as $index => $img)
+                        <img src="{{ $imageHelper($img) }}" alt="Thumbnail {{ $index + 1 }}" class="thumbnail {{ $index === 0 ? 'active' : '' }}" onclick="changeImage(this, '{{ $imageHelper($img) }}')">
+                    @empty
                         <img src="https://via.placeholder.com/150x100/1A1A2E/C9A227?text=No+Image" alt="No image" class="thumbnail active" onclick="changeImage(this, 'https://via.placeholder.com/600x500')">
-                    @endif
+                    @endforelse
                 </div>
             </div>
 
@@ -275,8 +298,8 @@
                 <h1>{{ $product->name }}</h1>
                 <div class="product-detail-price">
                     {{ currency_symbol() }} {{ number_format($product->price, 0, '.', ',') }}
-                    @if($product->sale_price && $product->sale_price < $product->price)
-                        <span class="old-price">{{ currency_symbol() }} {{ number_format($product->price, 0, '.', ',') }}</span>
+                    @if($product->old_price && $product->old_price > $product->price)
+                        <span class="old-price">{{ currency_symbol() }} {{ number_format($product->old_price, 0, '.', ',') }}</span>
                     @endif
                 </div>
                 <p class="product-short-desc">
@@ -302,6 +325,9 @@
                     <button class="btn btn-primary" onclick="addToCart({{ $product->id }}, parseInt(document.getElementById('quantity').value))">
                         <i class="fas fa-shopping-cart"></i> Add to Cart
                     </button>
+                    <button class="btn btn-secondary" onclick="buyNow({{ $product->id }}, parseInt(document.getElementById('quantity').value))" style="background: #f5c26b; color: #000;">
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </button>
                     <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);">
                         <i class="far fa-heart"></i> Wishlist
                     </button>
@@ -314,103 +340,95 @@
             <div class="tabs-header">
                 <button class="tab-btn active" onclick="openTab(event, 'description')">Description</button>
                 <button class="tab-btn" onclick="openTab(event, 'specifications')">Specifications</button>
-                <button class="tab-btn" onclick="openTab(event, 'reviews')">Reviews (5)</button>
+                <button class="tab-btn" onclick="openTab(event, 'reviews')">Reviews ({{ $reviews->count() }})</button>
             </div>
 
             <div id="description" class="tab-content active">
                 <h3 style="margin-bottom: 20px; color: var(--primary);">Product Description</h3>
-                <p>The Classic Velvet Sofa represents the perfect blend of traditional craftsmanship and contemporary design. Each piece is meticulously crafted using time-honored techniques passed down through generations of furniture makers.</p>
-                <br>
-                <p>Features premium high-resilience foam cushions that maintain their shape over time, a solid hardwood frame with kiln-dried joinery for exceptional durability, and soft velvet upholstery that adds a luxurious touch to any room.</p>
-                <br>
-                <p>Available in multiple colors to complement your existing decor. Professional cleaning recommended for lasting beauty.</p>
+                <p>{!! nl2br(e($product->description ?? $product->short_description ?? 'No description available.')) !!}</p>
             </div>
 
             <div id="specifications" class="tab-content">
                 <h3 style="margin-bottom: 20px; color: var(--primary);">Technical Specifications</h3>
-                <table class="specs-table">
-                    <tr>
-                        <td>Dimensions</td>
-                        <td>84" W x 36" D x 32" H</td>
-                    </tr>
-                    <tr>
-                        <td>Weight Capacity</td>
-                        <td>600 lbs</td>
-                    </tr>
-                    <tr>
-                        <td>Frame Material</td>
-                        <td>Solid Hardwood</td>
-                    </tr>
-                    <tr>
-                        <td>Upholstery</td>
-                        <td>Premium Velvet (100% Polyester)</td>
-                    </tr>
-                    <tr>
-                        <td>Cushion Fill</td>
-                        <td>High-Density Foam</td>
-                    </tr>
-                    <tr>
-                        <td>Leg Material</td>
-                        <td>Solid Oak Wood</td>
-                    </tr>
-                    <tr>
-                        <td>Assembly</td>
-                        <td>Minimal Assembly Required</td>
-                    </tr>
-                    <tr>
-                        <td>Warranty</td>
-                        <td>5 Years on Frame, 2 Years on Cushions</td>
-                    </tr>
-                </table>
+                @php
+                    $specs = [
+                        'Material' => $product->material,
+                        'Dimensions' => $product->dimensions,
+                        'Color' => $product->color,
+                        'Weight' => $product->weight ? $product->weight . ' kg' : null,
+                        'SKU' => $product->sku,
+                        'Stock Quantity' => $product->stock_quantity,
+                        'Category' => optional($product->category)->name,
+                        'Status' => ucfirst($product->status),
+                    ];
+                    $specs = collect($specs)->filter();
+                @endphp
+
+                @if($specs->isEmpty())
+                    <p>No specification details are available for this product.</p>
+                @else
+                    <table class="specs-table">
+                        @foreach($specs as $label => $value)
+                            <tr>
+                                <td>{{ $label }}</td>
+                                <td>{{ $value }}</td>
+                            </tr>
+                        @endforeach
+                    </table>
+                @endif
             </div>
 
             <div id="reviews" class="tab-content">
                 <h3 style="margin-bottom: 20px; color: var(--primary);">Customer Reviews</h3>
 
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">John D.</span>
-                        <span class="review-date">December 15, 2025</span>
-                    </div>
-                    <div class="review-rating">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <p>Absolutely stunning sofa! The quality is exceptional and it looks even better in person. Very comfortable and the velvet fabric is so soft. Highly recommend!</p>
-                </div>
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
 
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">Sarah M.</span>
-                        <span class="review-date">November 28, 2025</span>
+                @forelse($reviews as $review)
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="review-author">{{ optional($review->user)->name ?? 'Guest' }}</span>
+                            <span class="review-date">{{ $review->created_at->format('F j, Y') }}</span>
+                        </div>
+                        <div class="review-rating">
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="fas fa-star{{ $i <= $review->rating ? '' : '-o' }}"></i>
+                            @endfor
+                        </div>
+                        <p>{{ $review->comment ?? 'No comment provided.' }}</p>
                     </div>
-                    <div class="review-rating">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star-half-alt"></i>
-                    </div>
-                    <p>Great sofa for the price. Delivery was on time and the delivery team was very professional. The color is exactly as shown. Only minor issue is the cushion firmness, but it's still comfortable.</p>
-                </div>
+                @empty
+                    <p>No reviews have been submitted yet. Be the first to review this product!</p>
+                @endforelse
 
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">Michael R.</span>
-                        <span class="review-date">October 5, 2025</span>
+                @if(auth()->check())
+                    <div class="review-form" style="margin-top: 30px;">
+                        <h4>Write a Review</h4>
+                        <form action="{{ route('product.review', $product->slug) }}" method="POST">
+                            @csrf
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label for="rating">Rating</label>
+                                <select name="rating" id="rating" class="form-control" required>
+                                    <option value="">Select rating</option>
+                                    @for($i=1; $i<=5; $i++)
+                                        <option value="{{ $i }}" {{ old('rating') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                                    @endfor
+                                </select>
+                                @error('rating')<small class="text-danger">{{ $message }}</small>@enderror
+                            </div>
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label for="comment">Comment</label>
+                                <textarea name="comment" id="comment" class="form-control" rows="4" placeholder="Write your review...">{{ old('comment') }}</textarea>
+                                @error('comment')<small class="text-danger">{{ $message }}</small>@enderror
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Review</button>
+                        </form>
                     </div>
-                    <div class="review-rating">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <p>This is my second purchase from Royal Furniture. Once again, excellent quality and beautiful design. The customer service team was very helpful in choosing the right size.</p>
-                </div>
+                @else
+                    <p><a href="{{ route('login') }}">Log in</a> to submit a review.</p>
+                @endif
+            </div>
             </div>
         </div>
 
@@ -422,9 +440,12 @@
             </div>
             <div class="product-grid">
                 @foreach($relatedProducts as $related)
+                    @php
+                        $relatedImage = $related->first_image ? asset('uploads/' . $related->first_image) : 'https://via.placeholder.com/300x280';
+                    @endphp
                     <div class="product-card">
                         <div class="product-image">
-                            <img src="{{ $related->first_image ?? 'https://via.placeholder.com/300x280' }}" alt="{{ $related->name }}">
+                            <img src="{{ $relatedImage }}" alt="{{ $related->name }}">
                             <div class="product-actions">
                                 <button class="product-action" onclick="addToCart({{ $related->id }}, 1)"><i class="fas fa-shopping-cart"></i></button>
                                 <a href="{{ route('product.show', $related->slug) }}" class="product-action"><i class="fas fa-eye"></i></a>

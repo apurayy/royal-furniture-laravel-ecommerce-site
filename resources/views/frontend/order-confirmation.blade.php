@@ -6,7 +6,6 @@
 <style>
     .order-success {
         text-align: center;
-        padding: 80px 20px;
     }
 
     .success-icon {

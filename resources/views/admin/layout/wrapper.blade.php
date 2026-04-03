@@ -36,6 +36,9 @@
             <a href="{{ route('admin.contacts.index') }}" class="menu-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
                 <i class="fas fa-envelope"></i> Messages
             </a>
+            <a href="{{ route('admin.reviews.index') }}" class="menu-item {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}">
+                <i class="fas fa-star"></i> Reviews
+            </a>
             <a href="{{ route('admin.settings') }}" class="menu-item {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
                 <i class="fas fa-cog"></i> Settings
             </a>

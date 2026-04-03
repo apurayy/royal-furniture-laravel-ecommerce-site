@@ -24,6 +24,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
 Route::get('/category/{slug}', [ShopController::class, 'category'])->name('category');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
+Route::post('/product/{slug}/review', [ProductController::class, 'review'])->name('product.review');
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
@@ -71,6 +72,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('pages', AdminPageController::class);
         Route::resource('contacts', AdminContactController::class);
         Route::resource('footer-menu', FooterMenuController::class);
+
+        // Reviews approval workflow
+        Route::get('reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
+        Route::put('reviews/{review}/approve', [\App\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('reviews.approve');
+        Route::delete('reviews/{review}', [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('reviews.destroy');
 
         Route::get('/settings', [SettingController::class, 'index'])->name('settings');
         Route::post('/settings', [SettingController::class, 'store'])->name('settings.store');
