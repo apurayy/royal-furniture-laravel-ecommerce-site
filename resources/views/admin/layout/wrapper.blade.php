@@ -6,6 +6,7 @@
         <div class="sidebar-logo">
             <h1><i class="fas fa-crown"></i> Royal</h1>
             <span>ADMIN PANEL</span>
+            <span><a style="color: #DDB52F;" href="{{ route('home') }}" target="_blank">Visit Site</a></span>
         </div>
         <nav class="sidebar-menu">
             <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
